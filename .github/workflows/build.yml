@@ -1,0 +1,21 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build app
+        run: ./build-app.sh
+
+      - name: Zip
+        run: ditto -c -k --keepParent build/Kill9.app Kill9.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Kill9
+          path: Kill9.zip
