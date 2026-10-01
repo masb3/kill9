@@ -2,6 +2,14 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, e.g. 1.0.0 (leave empty to only build)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -19,3 +27,12 @@ jobs:
         with:
           name: Kill9
           path: Kill9.zip
+
+      - name: Publish release
+        if: inputs.version != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Kill9 ${{ inputs.version }}
+          files: Kill9.zip
+          generate_release_notes: true
