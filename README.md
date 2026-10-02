@@ -9,7 +9,7 @@ It's a friendly GUI for `kill -9 $(lsof -ti tcp:3000)`.
 
 [**Download for macOS**](https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg) · [Website](https://masb3.github.io/kill9/) · [Build from source](#build-from-source)
 
-<img src="docs/screenshot.png" alt="Kill9 menu-bar window listing ports 3000, 5173, 5353, 5432, 6379 and 7000 with the process holding each one" width="480">
+<img src="docs/screenshot.png" alt="Kill9 menu-bar window with Favorites, TCP, UDP and All filters, listing ports 3000, 5173, 5353, 5432, 6379 and 7000 with the process holding each one; favorite ports are marked with a star" width="480">
 
 </div>
 
