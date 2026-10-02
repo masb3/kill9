@@ -43,7 +43,7 @@ Seen that one before? Click ⑨ in the menu bar, type `3000`, press **Return**. 
 
 If you open Kill9 from somewhere else, like the disk image or Downloads, it offers to move itself to Applications. A zip (`Kill9.zip`) is also attached to each release if you prefer one.
 
-Requires macOS 13 Ventura or later. Release builds are for Apple Silicon; on an Intel Mac, build from source.
+Requires macOS 13 Ventura or later. Runs natively on Apple Silicon and Intel Macs.
 
 ## Build from source
 

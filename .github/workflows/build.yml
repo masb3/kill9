@@ -14,12 +14,47 @@ permissions:
 jobs:
   build:
     runs-on: macos-latest
+    env:
+      # Signing and notarization turn on once these secrets are set; otherwise the build is ad-hoc signed.
+      HAS_SIGNING: ${{ secrets.MACOS_CERT_P12 != '' }}
+      HAS_NOTARY: ${{ secrets.AC_API_KEY != '' }}
+      HAS_TAP: ${{ secrets.TAP_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v6
 
+      - name: Import signing certificate
+        if: env.HAS_SIGNING == 'true'
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$MACOS_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$MACOS_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')"
+          echo "SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Prepare notarization key
+        if: env.HAS_SIGNING == 'true' && env.HAS_NOTARY == 'true'
+        env:
+          AC_API_KEY: ${{ secrets.AC_API_KEY }}
+        run: |
+          echo "$AC_API_KEY" > "$RUNNER_TEMP/notary.p8"
+          echo "NOTARY_KEY=$RUNNER_TEMP/notary.p8" >> "$GITHUB_ENV"
+
       - name: Build app
+        env:
+          NOTARY_KEY_ID: ${{ secrets.AC_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.AC_ISSUER_ID }}
         run: ./build-app.sh --dmg
 
       - name: Package
@@ -42,3 +77,20 @@ jobs:
             Kill9.dmg
             Kill9.zip
           generate_release_notes: true
+
+      - name: Update Homebrew cask
+        if: inputs.version != '' && env.HAS_TAP == 'true'
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          SHA="$(shasum -a 256 Kill9.dmg | cut -d' ' -f1)"
+          git clone "https://x-access-token:$TAP_TOKEN@github.com/masb3/homebrew-tap.git" tap
+          mkdir -p tap/Casks
+          sed -e "s/@VERSION@/$VERSION/" -e "s/@SHA256@/$SHA/" packaging/kill9.rb > tap/Casks/kill9.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/kill9.rb
+          git commit -m "kill9 $VERSION"
+          git push
