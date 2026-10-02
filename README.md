@@ -23,10 +23,11 @@ Seen that one before? Click ⑨ in the menu bar, type `3000`, press **Return**. 
 
 - **Every port at a glance.** Listening TCP and bound UDP ports, with IPv4 and IPv6 merged. Refreshes every 3 seconds while the window is open.
 - **Port, then Return.** Type a port number and press Return to stop everything using it. Search also matches app names, process names and PIDs.
+- **Your ports, starred.** The ★ filter shows only your favorite ports. It starts with common dev-server, database and debugger ports (3000, 5173, 8080, 5432, 6379, 9229 and more). To add your own, type any port and click ☆, or right-click a row. Favorite ports get a small star in every view.
 - **Gentle first, firm second.** Kill sends SIGTERM, then SIGKILL after 1.5 seconds if the process won't exit. Force Kill sends `-9` straight away.
 - **Grouped by app.** Helper processes roll up into their parent `.app`, so Docker or your IDE appears once with all its ports.
 - **Know what you're stopping.** Process name, app icon, PID, user, and whether it listens on localhost only or on all interfaces.
-- **Right-click for more.** Open in browser, copy the PID or kill command, reveal in Finder.
+- **Right-click for more.** Open in browser, add to favorites, copy the PID or kill command, reveal in Finder.
 - **Stays out of the way.** No Dock icon, optional launch at login. Shortcuts: <kbd>⌘R</kbd> refresh, <kbd>⌘Q</kbd> quit.
 
 ## Install
@@ -61,4 +62,5 @@ For quick dev iteration: `swift run`. Or open `Package.swift` in Xcode and press
 ## Notes
 
 - Kill9 can only stop processes owned by your user. For root-owned ones it shows the `sudo kill -9 <pid>` command to run instead.
+- Favorites are saved in `~/Library/Preferences/dev.kill9.app.plist`. Right-click the filter bar to reset them to the defaults.
 - Releases are built by the **Build** GitHub Action. Run it from the Actions tab and enter a version to publish a release.

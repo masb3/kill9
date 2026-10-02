@@ -156,6 +156,11 @@
   }
   .p-search input::placeholder { color: #8e8e93; }
   .p-search:focus-within { box-shadow: 0 0 0 3px rgba(0,122,255,.28); }
+  .fav-btn { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; color: #8e8e93; display: flex; }
+  .fav-btn[hidden] { display: none; }
+  .fav-btn svg { fill: none; }
+  .fav-btn[aria-pressed="true"] { color: #FFCC00; }
+  .fav-btn[aria-pressed="true"] svg { fill: currentColor; }
 
   .p-controls { display: flex; justify-content: space-between; margin: 0 12px 10px; }
   .seg { display: inline-flex; background: rgba(0,0,0,.07); border-radius: 7px; padding: 2px; }
@@ -185,6 +190,8 @@
     background: rgba(0,122,255,.14); color: var(--blue);
   }
   .row.udp .port { background: rgba(255,149,0,.16); color: #C66A00; }
+  .port.fav { position: relative; }
+  .port.fav::after { content: "★"; position: absolute; top: -6px; right: -4px; font-size: 11px; line-height: 1; color: #FFCC00; }
   .pi { width: 20px; height: 20px; flex: none; display: grid; place-items: center; color: #8e8e93; }
   .pi.app { border-radius: 5px; color: #fff; font: 700 10px/1 var(--ui); }
   .rtext { flex: 1; min-width: 0; }
@@ -343,13 +350,19 @@
           <label class="p-search">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
             <input id="q" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="Port, app, process or PID" aria-label="Search ports">
+            <button class="fav-btn" id="favBtn" type="button" hidden aria-pressed="false">
+              <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="m8 1.3 2 4.3 4.7.5-3.5 3.2 1 4.6L8 11.5l-4.2 2.4 1-4.6L1.3 6.1 6 5.6Z"/></svg>
+            </button>
           </label>
 
           <div class="p-controls">
             <div class="seg" role="group" aria-label="Protocol">
-              <button data-proto="all" aria-pressed="true">All</button>
+              <button data-proto="fav" aria-pressed="false" title="Favorites" aria-label="Favorites">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="m8 1.3 2 4.3 4.7.5-3.5 3.2 1 4.6L8 11.5l-4.2 2.4 1-4.6L1.3 6.1 6 5.6Z"/></svg>
+              </button>
               <button data-proto="TCP" aria-pressed="false">TCP</button>
               <button data-proto="UDP" aria-pressed="false">UDP</button>
+              <button data-proto="all" aria-pressed="true">All</button>
             </div>
             <div class="seg" role="group" aria-label="View">
               <button data-view="list" aria-pressed="true" title="Flat list" aria-label="Flat list">
@@ -406,10 +419,10 @@
       <dl class="feats">
         <div><dt>Every port at a glance</dt><dd>Listening TCP and bound UDP ports, IPv4 and IPv6 merged into one row. Refreshes every 3 seconds while open.</dd></div>
         <div><dt>Port, then Return</dt><dd>Type a port number and press Return to stop everything using it. Search also matches app names, process names and PIDs.</dd></div>
+        <div><dt>Your ports, starred</dt><dd>The ★ filter shows only the ports you care about. It comes with common dev-server, database and debugger ports; type any port and click ☆ to add your own.</dd></div>
         <div><dt>Gentle first, firm second</dt><dd>Kill sends SIGTERM so servers can shut down cleanly, then SIGKILL after 1.5 seconds if they don't. Force Kill sends <code>-9</code> straight away.</dd></div>
         <div><dt>Grouped by app</dt><dd>Helper processes roll up into their parent app, so Docker or your IDE shows up once with all its ports.</dd></div>
-        <div><dt>Know what you're stopping</dt><dd>Process name, app icon, PID, user, and whether it listens on localhost only or on every network interface.</dd></div>
-        <div><dt>Right-click for more</dt><dd>Open the port in your browser, copy the PID or the kill command, or reveal the program in Finder.</dd></div>
+        <div><dt>Know what you're stopping</dt><dd>Process name, app icon, PID, user, and whether it listens on localhost only or on every interface. Right-click to open it in a browser, copy the PID or kill command, or reveal it in Finder.</dd></div>
       </dl>
     </section>
 
@@ -467,6 +480,8 @@
 
   let ports = SEED.map(p => ({ ...p }));
   let proto = "all", view = "list", query = "";
+  const favorites = new Set([3000, 3001, 4000, 4200, 5000, 5173, 5174, 8000, 8080, 8081, 8888, 9000,
+    3306, 5432, 6379, 27017, 9200, 9229, 5672, 15672, 9092]);
   const killing = new Set();
   const armed = new Set();
 
@@ -474,7 +489,10 @@
   const list = $("list"), q = $("q"), banner = $("banner"), toast = $("toast"), hero = $("hero");
 
   const norm = () => { let s = query.trim().toLowerCase(); if (s.startsWith(":")) s = s.slice(1); return s; };
-  const byProto = () => proto === "all" ? ports : ports.filter(p => p.proto === proto);
+  const byProto = () => proto === "all" ? ports
+    : proto === "fav" ? ports.filter(p => favorites.has(p.port))
+    : ports.filter(p => p.proto === proto);
+  const queryPort = () => { const s = norm(); return /^\d+$/.test(s) && +s >= 1 && +s <= 65535 ? +s : null; };
   const filtered = () => {
     const s = norm();
     if (!s) return byProto();
@@ -490,7 +508,7 @@
     const k = killing.has(p.pid);
     const details = [p.proto, "PID " + p.pid, p.user, p.local ? "localhost only" : "all interfaces"].join(" · ");
     return `<div class="row ${p.proto === "UDP" ? "udp" : ""} ${k ? "killing" : ""}" data-key="${key(p)}">
-      <span class="port">${p.port}</span>${showIcon ? icon(p) : ""}
+      <span class="port ${favorites.has(p.port) ? "fav" : ""}">${p.port}</span>${showIcon ? icon(p) : ""}
       <span class="rtext"><b>${esc(p.cmd)}</b><small>${details}</small></span>
       <button class="kill" data-kill="${key(p)}" aria-label="Kill ${esc(p.cmd)} on port ${p.port}" ${k ? "disabled" : ""}>
         ${k ? '<span class="spin"></span>' : '<svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="currentColor"/><path d="m6.2 6.2 5.6 5.6m0-5.6-5.6 5.6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>'}
@@ -505,10 +523,20 @@
     banner.hidden = !ex;
     if (ex) $("bannerText").textContent = `Kill everything on :${ex.port}` + (ex.items.length > 1 ? ` (${ex.items.length})` : "");
 
+    const qp = queryPort(), fb = $("favBtn");
+    fb.hidden = qp === null;
+    if (qp !== null) {
+      const on = favorites.has(qp);
+      fb.setAttribute("aria-pressed", on);
+      fb.title = (on ? "Remove :" : "Add :") + qp + (on ? " from Favorites" : " to Favorites");
+      fb.setAttribute("aria-label", fb.title);
+    }
+
     const items = filtered();
     const s = norm();
     if (!items.length) {
-      const [t, d] = !s ? ["All ports are free", "Start a dev server and it will show up here."]
+      const [t, d] = !s && proto === "fav" ? ["No favorite ports in use", "Type a port number and click ☆ to add it."]
+        : !s ? ["All ports are free", "Start a dev server and it will show up here."]
         : /^\d+$/.test(s) ? [`Port :${esc(s)} is free`, "Nothing is using it."]
         : ["No matches", `Nothing matches “${esc(query)}”.`];
       list.innerHTML = `<div class="empty"><b>${t}</b><span>${d}</span></div>`;
@@ -572,6 +600,13 @@
   q.addEventListener("input", () => { query = q.value; render(); });
   q.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); killExact(); } });
   banner.addEventListener("click", killExact);
+  $("favBtn").addEventListener("click", e => {
+    e.preventDefault(); // inside the <label>; don't bounce focus
+    const p = queryPort(); if (p === null) return;
+    favorites.has(p) ? favorites.delete(p) : favorites.add(p);
+    render();
+    q.focus();
+  });
 
   list.addEventListener("click", e => {
     const b = e.target.closest("[data-kill]");
