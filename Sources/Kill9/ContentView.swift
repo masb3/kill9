@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 enum ViewMode: String { case list, apps }
-enum ProtoFilter: String, CaseIterable { case all = "All", tcp = "TCP", udp = "UDP" }
+enum ProtoFilter: String, CaseIterable { case favorites = "Favorites", tcp = "TCP", udp = "UDP", all = "All" }
 
 /// All ports held by one app (helper processes inside the same .app are merged).
 struct AppGroup: Identifiable {
@@ -35,11 +35,18 @@ struct ContentView: View {
         return q
     }
 
+    /// The query as a valid port number, if it is one.
+    private var queryPort: Int? {
+        guard let port = Int(normalizedQuery), (1...65535).contains(port) else { return nil }
+        return port
+    }
+
     private var protocolFiltered: [PortProcess] {
         switch protoFilter {
         case .all: return store.ports
         case .tcp: return store.ports.filter { $0.proto == .tcp }
         case .udp: return store.ports.filter { $0.proto == .udp }
+        case .favorites: return store.ports.filter { store.favorites.contains($0.port) }
         }
     }
 
@@ -137,6 +144,15 @@ struct ContentView: View {
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
                 .onSubmit(killExactPort)
+            if let port = queryPort {
+                let isFavorite = store.favorites.contains(port)
+                Button { store.toggleFavorite(port) } label: {
+                    Image(systemName: isFavorite ? "star.fill" : "star")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(isFavorite ? Color.yellow : Color.secondary)
+                .help(isFavorite ? "Remove :\(port) from Favorites" : "Add :\(port) to Favorites")
+            }
             if !query.isEmpty {
                 Button { query = "" } label: { Image(systemName: "xmark.circle.fill") }
                     .buttonStyle(.plain)
@@ -153,12 +169,19 @@ struct ContentView: View {
         HStack(spacing: 8) {
             Picker("Protocol", selection: $protoFilter) {
                 ForEach(ProtoFilter.allCases, id: \.self) { filter in
-                    Text(verbatim: filter.rawValue).tag(filter)
+                    if filter == .favorites {
+                        Image(systemName: "star.fill").tag(filter)
+                    } else {
+                        Text(verbatim: filter.rawValue).tag(filter)
+                    }
                 }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 160)
+            .frame(width: 200)
+            .contextMenu {
+                Button("Reset Favorites to Defaults") { store.resetFavorites() }
+            }
 
             Spacer()
 
@@ -200,7 +223,11 @@ struct ContentView: View {
         if let error = store.errorMessage {
             placeholder(icon: "exclamationmark.triangle", title: "Scan failed", detail: error)
         } else if filtered.isEmpty {
-            if normalizedQuery.isEmpty {
+            if normalizedQuery.isEmpty && protoFilter == .favorites {
+                placeholder(icon: "star",
+                            title: "No favorite ports in use",
+                            detail: "Type a port number and click ☆, or right-click any port.")
+            } else if normalizedQuery.isEmpty {
                 placeholder(icon: "checkmark.seal",
                             title: "All ports are free",
                             detail: "Start a dev server and it will show up here.")
@@ -369,6 +396,14 @@ struct PortRow: View {
                 .padding(.horizontal, 4)
                 .background(Capsule().fill(tint.opacity(0.15)))
                 .foregroundStyle(tint)
+                .overlay(alignment: .topTrailing) {
+                    if store.favorites.contains(item.port) {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 7))
+                            .foregroundStyle(.yellow)
+                            .offset(x: 2, y: -2)
+                    }
+                }
 
             if showIcon { ProcessIcon(item: item) }
 
@@ -430,6 +465,10 @@ struct PortRow: View {
             Button("Open in Browser") { open() }
             Divider()
         }
+        Button(store.favorites.contains(item.port) ? "Remove from Favorites" : "Add to Favorites") {
+            store.toggleFavorite(item.port)
+        }
+        Divider()
         Button("Copy Port") { store.copy(String(item.port), label: "port") }
         Button("Copy PID") { store.copy(String(item.pid), label: "PID") }
         Button("Copy Kill Command") { store.copy(item.killCommand, label: "kill command") }

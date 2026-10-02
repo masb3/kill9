@@ -15,6 +15,15 @@ final class PortStore: ObservableObject {
     @Published private(set) var killing: Set<pid_t> = []
     @Published private(set) var launchAtLogin = SMAppService.mainApp.status == .enabled
     @Published var toast: Toast?
+    @Published private(set) var favorites: Set<Int> =
+        (UserDefaults.standard.array(forKey: "favoritePorts") as? [Int]).map(Set.init) ?? PortStore.defaultFavorites
+
+    /// Common dev-server, database and debugger ports.
+    static let defaultFavorites: Set<Int> = [
+        3000, 3001, 4000, 4200, 5000, 5173, 5174, 8000, 8080, 8081, 8888, 9000, // web dev servers
+        3306, 5432, 6379, 27017, 9200,                                       // databases / search
+        9229, 5672, 15672, 9092,                                             // node inspector, queues
+    ]
 
     private var timer: Timer?
     private var scanInFlight = false
@@ -79,6 +88,18 @@ final class PortStore: ObservableObject {
                 self.refresh()
             }
         }
+    }
+
+    // MARK: Favorites
+
+    func toggleFavorite(_ port: Int) {
+        if favorites.remove(port) == nil { favorites.insert(port) }
+        UserDefaults.standard.set(favorites.sorted(), forKey: "favoritePorts")
+    }
+
+    func resetFavorites() {
+        favorites = Self.defaultFavorites
+        UserDefaults.standard.removeObject(forKey: "favoritePorts")
     }
 
     // MARK: Misc
