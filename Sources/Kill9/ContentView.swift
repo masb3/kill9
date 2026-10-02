@@ -25,7 +25,7 @@ struct ContentView: View {
     @State private var query = ""
     @FocusState private var searchFocused: Bool
     @AppStorage("viewMode") private var viewMode: ViewMode = .list
-    @AppStorage("protoFilter") private var protoFilter: ProtoFilter = .all
+    @AppStorage("protoFilter") private var protoFilter: ProtoFilter = .favorites
 
     // MARK: Filtering
 
