@@ -17,16 +17,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build app
-        run: ./build-app.sh
+      - uses: astral-sh/setup-uv@v6
 
-      - name: Zip
-        run: ditto -c -k --keepParent build/Kill9.app Kill9.zip
+      - name: Build app
+        run: ./build-app.sh --dmg
+
+      - name: Package
+        run: ditto -c -k --keepParent build/Kill9.app Kill9.zip && cp build/Kill9.dmg Kill9.dmg
 
       - uses: actions/upload-artifact@v4
         with:
           name: Kill9
-          path: Kill9.zip
+          path: |
+            Kill9.dmg
+            Kill9.zip
 
       - name: Publish release
         if: inputs.version != ''
@@ -34,5 +38,7 @@ jobs:
         with:
           tag_name: v${{ inputs.version }}
           name: Kill9 ${{ inputs.version }}
-          files: Kill9.zip
+          files: |
+            Kill9.dmg
+            Kill9.zip
           generate_release_notes: true

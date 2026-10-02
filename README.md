@@ -7,7 +7,7 @@
 A tiny macOS menu-bar app that shows what's listening on every port and stops it in one click.<br>
 It's a friendly GUI for `kill -9 $(lsof -ti tcp:3000)`.
 
-[**Download for macOS**](https://github.com/masb3/kill9/releases/latest/download/Kill9.zip) · [Website](https://masb3.github.io/kill9/) · [Build from source](#build-from-source)
+[**Download for macOS**](https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg) · [Website](https://masb3.github.io/kill9/) · [Build from source](#build-from-source)
 
 <img src="docs/screenshot.png" alt="Kill9 menu-bar window listing ports 3000, 5173, 5353, 5432, 6379 and 7000 with the process holding each one" width="480">
 
@@ -31,14 +31,16 @@ Seen that one before? Click ⑨ in the menu bar, type `3000`, press **Return**. 
 
 ## Install
 
-1. Download [**Kill9.zip**](https://github.com/masb3/kill9/releases/latest/download/Kill9.zip) and unzip it.
-2. Move `Kill9.app` to your Applications folder.
+1. Download [**Kill9.dmg**](https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg) and open it.
+2. Drag **Kill9** onto the **Applications** folder in the window that opens.
 3. Kill9 isn't notarized by Apple yet, so macOS blocks the first launch. Allow it once:
    ```bash
    xattr -dr com.apple.quarantine /Applications/Kill9.app
    ```
    Or try to open it, then click **Open Anyway** in System Settings → Privacy & Security.
 4. Open Kill9. The ⑨ icon appears in your menu bar.
+
+If you open Kill9 from somewhere else, like the disk image or Downloads, it offers to move itself to Applications. A zip (`Kill9.zip`) is also attached to each release if you prefer one.
 
 Requires macOS 13 Ventura or later. Release builds are for Apple Silicon; on an Intel Mac, build from source.
 
@@ -51,6 +53,8 @@ You need macOS 13+ and the Xcode Command Line Tools.
 open build/Kill9.app
 # optional: cp -R build/Kill9.app /Applications/
 ```
+
+`./build-app.sh --dmg` also makes `build/Kill9.dmg`. It needs [uv](https://docs.astral.sh/uv/) to run `dmgbuild`. To change the icon or the disk image background, edit the files in `assets/` and run `assets/render.sh` (needs Google Chrome).
 
 For quick dev iteration: `swift run`. Or open `Package.swift` in Xcode and press ⌘R.
 

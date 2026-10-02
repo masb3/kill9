@@ -19,5 +19,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Keep it a menu-bar-only app, even when launched via `swift run`.
         NSApp.setActivationPolicy(.accessory)
+        AppMover.moveToApplicationsIfNeeded()
     }
 }

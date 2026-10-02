@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:kill9}",
+            "name": "Debug Kill9",
+            "target": "Kill9",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Kill9"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:kill9}",
+            "name": "Release Kill9",
+            "target": "Kill9",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Kill9"
+        }
+    ]
+}
