@@ -3,26 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kill9 — free your ports</title>
-<meta name="description" content="A tiny macOS menu-bar app that shows what's listening on every port and stops it in one click.">
-<meta property="og:title" content="Kill9 — free your ports">
-<meta property="og:description" content="See what's holding every port on your Mac. Type the port, press Return, it's free.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%23FF3B30'/><text x='16' y='22.5' font-family='-apple-system,Helvetica,Arial' font-size='18' font-weight='700' fill='white' text-anchor='middle'>9</text></svg>">
+<title>Kill9 — Kill the process using a port on macOS</title>
+<meta name="description" content="Port 3000 already in use? Kill9 is a free macOS menu-bar app that shows what's listening on every port and stops it in one keystroke. No more lsof and kill -9.">
+<link rel="canonical" href="https://masb3.github.io/kill9/">
+<meta name="theme-color" content="#C3CEF6">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kill9">
+<meta property="og:url" content="https://masb3.github.io/kill9/">
+<meta property="og:title" content="Kill9 — Free any port on your Mac in one keystroke">
+<meta property="og:description" content="A free macOS menu-bar app that shows what's holding every port. Type the port, press Return, it's free.">
+<meta property="og:image" content="https://masb3.github.io/kill9/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kill9's menu-bar window listing ports 3000, 5173, 5432 and 8080 with the processes holding them">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Kill9",
+  "description": "A macOS menu-bar app that shows what's listening on every TCP and UDP port and kills the process holding it in one keystroke.",
+  "url": "https://masb3.github.io/kill9/",
+  "downloadUrl": "https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg",
+  "image": "https://masb3.github.io/kill9/og.png",
+  "screenshot": "https://masb3.github.io/kill9/screenshot.png",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "macOS 13 or later",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --paper: #F2F3F5;
-    --paper-2: #E6E8EC;
+    --line: #DDE0E6;
     --ink: #1D1D1F;
     --ink-2: #5B5F68;
     --ink-3: #8A8F99;
     --red: #FF3B30;
     --red-deep: #D70015;
     --blue: #007AFF;
-    --orange: #FF9500;
-    --green: #28A745;
+    --green: #1F9D45;
     --panel: rgba(246, 246, 248, 0.86);
     --panel-line: rgba(0, 0, 0, 0.09);
     --row-hover: rgba(0, 0, 0, 0.055);
@@ -32,94 +60,46 @@
   }
 
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     margin: 0;
     background: var(--paper);
     color: var(--ink);
-    font: 400 18px/1.55 var(--sans);
+    font: 400 18px/1.5 var(--sans);
     -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; }
   :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
   code, kbd { font-family: var(--mono); font-size: 0.82em; }
-
   .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
 
-  /* ---------- Top bar ---------- */
-  .top {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 22px 0;
-  }
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
-  .dot9 {
-    width: 26px; height: 26px; border-radius: 50%; background: var(--red); color: #fff;
-    display: grid; place-items: center; font: 700 15px/1 var(--ui);
-  }
-  .top nav { display: flex; gap: 24px; font-size: 16px; }
-  .top nav a { text-decoration: none; color: var(--ink-2); }
-  .top nav a:hover { color: var(--ink); }
-
-  /* ---------- Hero ---------- */
-  .hero {
-    display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 64px;
-    align-items: center; padding: 48px 0 96px;
-  }
-  .err {
-    font: 500 clamp(26px, 3.6vw, 44px)/1.22 var(--mono);
-    letter-spacing: -0.03em;
-    margin: 0 0 28px;
-    color: var(--ink);
-    position: relative;
-  }
-  .err .prompt { color: var(--ink-3); }
-  .err .hl { color: var(--red-deep); }
-  .err .line { text-decoration: line-through; text-decoration-thickness: 0.08em; text-decoration-color: transparent; transition: text-decoration-color .5s ease; }
-  .freed .err .line { text-decoration-color: var(--red); }
-  .freed .err { color: var(--ink-3); }
-  .freed .err .hl { color: var(--ink-3); }
-
-  .after {
-    font: 700 clamp(22px, 2.4vw, 30px)/1.2 var(--sans);
-    letter-spacing: -0.015em;
-    margin: 0 0 18px;
-    min-height: 1.2em;
-  }
-  .after .free { color: var(--green); display: none; }
-  .freed .after .free { display: inline; }
-  .freed .after .busy { display: none; }
-
-  .pitch { font-size: 20px; color: var(--ink-2); max-width: 33em; margin: 0 0 32px; }
-
-  .ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
-  .btn {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: var(--ink); color: #fff; text-decoration: none;
-    font: 600 17px/1 var(--sans); padding: 16px 22px; border-radius: 12px;
-    transition: transform .12s ease, background .12s ease;
-  }
-  .btn:hover { background: #000; }
-  .btn:active { transform: translateY(1px); }
-  .btn svg { width: 18px; height: 18px; }
-  .req { font-size: 15px; color: var(--ink-3); }
-  .req a { color: var(--ink-2); }
-
-  /* ---------- Desktop + popover demo ---------- */
+  /* ---------- Desktop hero: the page itself is the Mac ---------- */
   .desk {
-    position: relative; border-radius: 18px; overflow: hidden;
+    position: relative; overflow: hidden;
+    min-height: min(680px, 100svh);
     background:
-      radial-gradient(120% 90% at 85% 0%, #8FB4FF 0%, transparent 55%),
-      radial-gradient(90% 80% at 0% 100%, #FF9C8A 0%, transparent 60%),
-      linear-gradient(160deg, #B9C7F4 0%, #D9C4EC 55%, #F6C9B8 100%);
-    padding: 0 0 28px;
-    box-shadow: 0 30px 60px -30px rgba(30, 40, 80, .45);
+      radial-gradient(70% 90% at 100% 0%, #7FA6FF 0%, transparent 60%),
+      radial-gradient(60% 80% at 0% 100%, #FF9C8A 0%, transparent 65%),
+      radial-gradient(50% 60% at 55% 70%, #F3B6E0 0%, transparent 70%),
+      linear-gradient(160deg, #C3CEF6 0%, #DCC7EE 55%, #F7CDBB 100%);
+    padding-bottom: 72px;
   }
   .menubar {
-    height: 30px; display: flex; align-items: center; justify-content: flex-end; gap: 16px;
+    position: relative; z-index: 2;
+    height: 30px; display: flex; align-items: center; gap: 18px;
     padding: 0 14px; font: 500 13px/1 var(--ui); color: #1d1d1f;
     background: rgba(255,255,255,.42); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   }
+  .menubar a { text-decoration: none; }
+  .menubar .app { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .menubar .app .dot9 { width: 16px; height: 16px; font-size: 10.5px; }
+  .menubar .grow { flex: 1; }
   .menubar .mb-icon { opacity: .75; display: flex; }
+  #clock { white-space: pre; }
+  .dot9 {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--red); color: #fff;
+    display: grid; place-items: center; font: 800 13px/1 var(--ui); flex: none;
+  }
   .mb9 {
     appearance: none; border: 0; padding: 3px 5px; border-radius: 5px; background: transparent; cursor: pointer;
     display: flex; align-items: center;
@@ -127,11 +107,44 @@
   .mb9[aria-expanded="true"] { background: rgba(0,0,0,.14); }
   .mb9 span { width: 16px; height: 16px; border-radius: 50%; background: #1d1d1f; color: #fff; display: grid; place-items: center; font: 800 10.5px/1 var(--ui); }
 
+  .wrap.hero-copy { padding-top: clamp(64px, 12vh, 128px); }
+  .hero-copy > div { max-width: 600px; }
+  .err {
+    font: 500 clamp(15px, 1.6vw, 19px)/1.4 var(--mono);
+    letter-spacing: -0.02em; margin: 0 0 22px; color: var(--red-deep);
+    display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline;
+  }
+  .err .line { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: transparent; transition: text-decoration-color .4s ease, color .4s ease; }
+  .err .ok { color: var(--green); opacity: 0; transition: opacity .4s ease .25s; }
+  .freed .err .line { color: var(--ink-3); text-decoration-color: var(--red); }
+  .freed .err .ok { opacity: 1; }
+
+  h1 {
+    font: 700 clamp(46px, 6.8vw, 88px)/0.98 var(--sans);
+    letter-spacing: -0.045em; margin: 0 0 24px;
+  }
+  .pitch { font-size: clamp(18px, 1.7vw, 21px); color: #3E4250; max-width: 26em; margin: 0 0 34px; }
+
+  .ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--ink); color: #fff; text-decoration: none;
+    font: 600 17px/1 var(--sans); padding: 17px 24px; border-radius: 14px;
+    box-shadow: 0 10px 24px -12px rgba(29,29,31,.6);
+    transition: transform .12s ease, background .12s ease;
+  }
+  .btn:hover { background: #000; }
+  .btn:active { transform: translateY(1px); }
+  .btn svg { width: 18px; height: 18px; }
+  .req { font-size: 15px; color: #4A4F5C; }
+
+  /* The Kill9 window hangs from the ⑨ in the menu bar */
+  .stage { position: absolute; z-index: 1; top: 38px; right: 14px; width: 392px; }
   .pop {
-    margin: 8px 14px 0 auto; width: 392px; max-width: calc(100% - 28px);
+    width: 100%;
     background: var(--panel); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
     border: 0.5px solid rgba(0,0,0,.18); border-radius: 12px;
-    box-shadow: 0 0 0 0.5px rgba(255,255,255,.6) inset, 0 18px 50px rgba(0,0,0,.28);
+    box-shadow: 0 0 0 0.5px rgba(255,255,255,.6) inset, 0 24px 60px rgba(40,30,80,.32);
     font: 400 13px/1.3 var(--ui); color: #1d1d1f;
     position: relative; overflow: hidden;
     transform-origin: top right;
@@ -140,7 +153,6 @@
   .pop[hidden] { display: block; opacity: 0; transform: scale(.96); pointer-events: none; visibility: hidden; }
 
   .p-head { display: flex; align-items: center; gap: 10px; padding: 12px; }
-  .p-head .dot9 { width: 22px; height: 22px; font-size: 13px; }
   .p-title { font: 600 13px/1.2 ui-monospace, "SF Mono", Menlo, monospace; }
   .p-sub { font-size: 11px; color: #6e6e73; }
   .p-head .grow { flex: 1; }
@@ -183,7 +195,6 @@
   .row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 7px; transition: opacity .2s ease; }
   .row:hover { background: var(--row-hover); }
   .row.killing { opacity: .5; }
-  .row.gone { opacity: 0; }
   .port {
     min-width: 52px; text-align: center; padding: 3px 4px; border-radius: 99px;
     font: 600 12.5px/1.2 ui-monospace, "SF Mono", Menlo, monospace;
@@ -227,240 +238,219 @@
   .toast[hidden] { display: flex; opacity: 0; transform: translateY(8px); pointer-events: none; }
   .toast svg { flex: none; margin-top: 1px; }
 
-  .try { margin: 14px 14px 0 auto; width: 392px; max-width: calc(100% - 28px); font: 500 13px/1.4 var(--sans); color: rgba(29,29,31,.72); text-align: center; }
+  .try { margin: 14px 0 0; font: 500 13px/1.4 var(--sans); color: rgba(29,29,31,.72); text-align: center; }
   .try kbd { background: rgba(255,255,255,.6); padding: 1px 6px; border-radius: 4px; font-size: 11.5px; }
 
-  /* ---------- Sections ---------- */
-  section.band { padding: 88px 0; border-top: 1px solid var(--paper-2); }
-  h2 { font: 700 clamp(30px, 3.4vw, 42px)/1.1 var(--sans); letter-spacing: -0.025em; margin: 0 0 20px; max-width: 18em; }
-  .lede { color: var(--ink-2); font-size: 20px; max-width: 34em; margin: 0 0 48px; }
+  /* ---------- Below the desktop ---------- */
+  section.band { padding: 96px 0; }
+  section.band + section.band { border-top: 1px solid var(--line); }
+  h2 { font: 700 clamp(30px, 3.6vw, 46px)/1.05 var(--sans); letter-spacing: -0.03em; margin: 0 0 40px; max-width: 16em; }
 
-  .compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-  .compare figure { margin: 0; display: flex; flex-direction: column; }
-  .compare figcaption { font-size: 15px; color: var(--ink-3); margin-bottom: 10px; }
+  .compare { display: grid; grid-template-columns: minmax(0, 1.25fr) auto minmax(0, 1fr); align-items: center; gap: 20px; }
   .term {
-    background: #1d1d1f; color: #E8E8ED; border-radius: 12px; padding: 22px 24px;
-    font: 400 14px/1.75 var(--mono); overflow-x: auto; flex: 1; margin: 0;
+    margin: 0; max-width: 100%; background: #1d1d1f; color: #E8E8ED; border-radius: 14px; padding: 26px 28px;
+    font: 400 clamp(13px, 1.3vw, 16px)/1.5 var(--mono); overflow-x: auto; white-space: nowrap;
   }
-  .term .c { color: #8A8F99; }
   .term .p { color: #FF6B61; }
-  .keys { background: #fff; border-radius: 12px; padding: 22px 24px; border: 1px solid var(--paper-2); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; font-size: 17px; color: var(--ink-2); }
+  .vs { font-size: 15px; color: var(--ink-3); }
+  .keys { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .keys kbd {
-    font: 500 15px/1 var(--mono); color: var(--ink); background: var(--paper); border: 1px solid #D5D8DE; border-bottom-width: 3px;
-    border-radius: 8px; padding: 9px 12px;
+    font: 500 18px/1 var(--mono); color: var(--ink); background: #fff; border: 1px solid #D5D8DE; border-bottom-width: 4px;
+    border-radius: 10px; padding: 14px 16px; min-width: 52px; text-align: center;
   }
+  .keys kbd.k9 { background: var(--red); border-color: var(--red-deep); color: #fff; font-family: var(--ui); font-weight: 800; }
 
-  .feats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px 48px; margin: 0; }
-  .feats div { border-top: 2px solid var(--ink); padding-top: 16px; }
-  .feats dt { font-weight: 700; font-size: 19px; margin-bottom: 6px; letter-spacing: -0.01em; }
-  .feats dd { margin: 0; color: var(--ink-2); font-size: 17px; }
+  .feats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px; margin: 0; }
+  .feats dt { font-weight: 700; font-size: 20px; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .feats dd { margin: 0; color: var(--ink-2); font-size: 16px; }
+  .feats .glyph { display: block; font: 600 26px/1 var(--mono); color: var(--red); margin-bottom: 18px; height: 26px; }
+  .feats .glyph.star { font: 400 28px/1 var(--ui); }
 
-  .steps { list-style: none; padding: 0; margin: 0; counter-reset: s; display: grid; gap: 22px; max-width: 760px; }
-  .steps li { counter-increment: s; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; align-items: start; }
+  .steps { list-style: none; padding: 0; margin: 0; counter-reset: s; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 40px; }
+  .steps li { counter-increment: s; }
   .steps li::before {
-    content: counter(s); width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: #fff;
-    display: grid; place-items: center; font: 600 15px/1 var(--sans);
+    content: counter(s); width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: #fff;
+    display: grid; place-items: center; font: 600 15px/1 var(--sans); margin-bottom: 16px;
   }
-  .steps b { display: block; font-size: 19px; }
-  .steps span { color: var(--ink-2); font-size: 17px; }
+  .steps b { display: block; font-size: 20px; letter-spacing: -0.01em; }
+  .steps span { display: block; color: var(--ink-2); font-size: 16px; margin-top: 4px; }
   .cmd {
-    display: flex; align-items: center; gap: 12px; margin-top: 10px; background: #1d1d1f; color: #E8E8ED;
-    border-radius: 10px; padding: 12px 12px 12px 16px; font: 400 13.5px/1.4 var(--mono); max-width: 100%;
+    display: flex; align-items: center; gap: 12px; margin-top: 12px; background: #1d1d1f; color: #E8E8ED;
+    border-radius: 10px; padding: 10px 10px 10px 14px; font: 400 12.5px/1.4 var(--mono);
   }
   .cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font-size: inherit; }
   .copy { appearance: none; border: 1px solid #48484A; background: transparent; color: #E8E8ED; font: 500 13px/1 var(--sans); padding: 7px 10px; border-radius: 7px; cursor: pointer; flex: none; }
   .copy:hover { background: #2c2c2e; }
-  .note { margin-top: 36px; font-size: 16px; color: var(--ink-3); max-width: 46em; }
 
-  .final { text-align: left; padding: 96px 0 72px; }
-  .final h2 { font-size: clamp(34px, 4.4vw, 56px); max-width: 14em; }
-  footer { border-top: 1px solid var(--paper-2); padding: 28px 0 40px; font-size: 15px; color: var(--ink-3); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  footer a { color: var(--ink-2); }
+  footer { border-top: 1px solid var(--line); padding: 28px 0 44px; font-size: 15px; color: var(--ink-3); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  footer nav { display: flex; gap: 22px; }
+  footer a { color: var(--ink-2); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
 
   /* ---------- Responsive ---------- */
-  @media (max-width: 980px) {
-    .hero { grid-template-columns: minmax(0, 1fr); gap: 48px; padding-bottom: 72px; }
-    .desk { max-width: 460px; }
+  @media (max-width: 1040px) {
+    .desk { min-height: 0; }
+    .stage { position: static; width: auto; max-width: 420px; margin: 56px 24px 0 auto; }
+    .wrap.hero-copy { padding-top: 64px; }
     .feats { grid-template-columns: 1fr 1fr; }
+    .compare { grid-template-columns: minmax(0, 1fr); justify-items: start; }
+    .steps { grid-template-columns: minmax(0, 1fr); max-width: 560px; gap: 32px; }
   }
   @media (max-width: 680px) {
     body { font-size: 17px; }
-    .wrap { padding: 0 16px; }
-    .top nav a.hide-sm { display: none; }
-    .hero { padding-top: 24px; }
-    .pitch, .lede { font-size: 18px; }
-    .compare, .feats { grid-template-columns: minmax(0, 1fr); }
-    .err { overflow-wrap: anywhere; }
-    .feats { gap: 32px; }
-    section.band { padding: 64px 0; }
-    .pop, .try { margin-left: 10px; margin-right: 10px; max-width: calc(100% - 20px); width: auto; }
+    .wrap { padding-left: 16px; padding-right: 16px; }
+    .wrap.hero-copy { padding-top: 44px; }
+    .menubar .hide-sm { display: none; }
+    .stage { margin: 48px 16px 0; max-width: none; }
     .p-list { height: 260px; }
+    section.band { padding: 64px 0; }
+    .feats { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .feats .glyph { margin-bottom: 10px; }
+  }
+  @media (max-width: 360px) {
+    .menubar .cdate { display: none; }
+  }
+  /* Touch screens: no zoom-on-focus in iOS Safari (needs 16px), finger-sized kill buttons */
+  @media (pointer: coarse) {
+    .p-search input { font-size: 16px; }
+    .kill { width: 40px; height: 40px; margin: -11px; align-items: center; justify-content: center; }
   }
   @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
     *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
   }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <header class="top">
-    <a class="brand" href="#"><span class="dot9" aria-hidden="true">9</span>Kill9</a>
-    <nav>
+<main>
+  <section class="desk" id="hero" aria-label="Kill9">
+    <div class="menubar">
+      <a class="app" href="#"><span class="dot9" aria-hidden="true">9</span>Kill9</a>
       <a class="hide-sm" href="#features">Features</a>
       <a class="hide-sm" href="#install">Install</a>
       <a href="https://github.com/masb3/kill9">GitHub</a>
-    </nav>
-  </header>
+      <span class="grow"></span>
+      <button class="mb9" id="mb9" aria-expanded="true" aria-controls="pop" title="Kill9"><span>9</span></button>
+      <span class="mb-icon" aria-hidden="true"><svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.4 10.4 0 0 0 8.5.4 10.4 10.4 0 0 0 1.3 3.3l1.2 1.3a8.6 8.6 0 0 1 6-2.4Zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.2-1.3a6.8 6.8 0 0 0-9.2 0l1.2 1.3c.9-.8 2.1-1.3 3.4-1.3Zm0 3.5c-.5 0-1 .2-1.3.5L8.5 11.2 9.8 9.8c-.3-.3-.8-.5-1.3-.5Z"/></svg></span>
+      <span id="clock"><span class="cdate">Thu 01.Oct </span>09:41</span>
+    </div>
 
-  <main>
-    <section class="hero" id="hero">
+    <div class="wrap hero-copy">
       <div>
-        <p class="err" aria-label="Error: Port 3000 is already in use."><span class="line"><span class="prompt">Error: </span><span class="hl">Port 3000</span> is already in use.</span></p>
-        <p class="after" aria-live="polite"><span class="busy">Something is already on port 3000.</span><span class="free">Port 3000 is free.</span></p>
-        <p class="pitch">Kill9 lives in your Mac's menu bar and shows every process holding a port. Type the port number, press Return, and it's gone. No more <code>lsof</code>.</p>
+        <p class="err" aria-live="polite"><span class="line">Error: port 3000 is already in use</span><span class="ok">✓ free</span></p>
+        <h1>Free any port in one keystroke.</h1>
+        <p class="pitch">Kill9 lives in your menu bar. Type a port, press Return, and whatever holds it is gone.</p>
         <div class="ctas">
           <a class="btn" href="https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10m0 0-4-4m4 4 4-4M4 16h12"/></svg>
             Download for macOS
           </a>
-          <span class="req">Free · macOS 13 or later · Apple Silicon &amp; Intel · <a href="https://github.com/masb3/kill9">source on GitHub</a></span>
+          <span class="req">Free. macOS 13 or later, Apple Silicon and Intel.</span>
         </div>
       </div>
+    </div>
 
-      <div class="desk" aria-label="Interactive demo of the Kill9 menu-bar window">
-        <div class="menubar">
-          <span class="mb-icon" aria-hidden="true"><svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.4 10.4 0 0 0 8.5.4 10.4 10.4 0 0 0 1.3 3.3l1.2 1.3a8.6 8.6 0 0 1 6-2.4Zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.2-1.3a6.8 6.8 0 0 0-9.2 0l1.2 1.3c.9-.8 2.1-1.3 3.4-1.3Zm0 3.5c-.5 0-1 .2-1.3.5L8.5 11.2 9.8 9.8c-.3-.3-.8-.5-1.3-.5Z"/></svg></span>
-          <button class="mb9" id="mb9" aria-expanded="true" aria-controls="pop" title="Kill9"><span>9</span></button>
-          <span id="clock">Thu 9:41</span>
-        </div>
-
-        <div class="pop" id="pop" role="dialog" aria-label="Kill9">
-          <div class="p-head">
-            <span class="dot9" aria-hidden="true">9</span>
-            <div class="grow">
-              <div class="p-title">kill -9</div>
-              <div class="p-sub" id="sub"></div>
-            </div>
-            <button class="icon-btn" id="refresh" title="Refresh (⌘R)" aria-label="Refresh">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 11.9 4.1M13.5 2v3h-3"/></svg>
-            </button>
+    <div class="stage">
+      <div class="pop" id="pop" role="dialog" aria-label="Kill9 demo">
+        <div class="p-head">
+          <span class="dot9" aria-hidden="true">9</span>
+          <div class="grow">
+            <div class="p-title">kill -9</div>
+            <div class="p-sub" id="sub"></div>
           </div>
-
-          <label class="p-search">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
-            <input id="q" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="Port, app, process or PID" aria-label="Search ports">
-            <button class="fav-btn" id="favBtn" type="button" hidden aria-pressed="false">
-              <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="m8 1.3 2 4.3 4.7.5-3.5 3.2 1 4.6L8 11.5l-4.2 2.4 1-4.6L1.3 6.1 6 5.6Z"/></svg>
-            </button>
-          </label>
-
-          <div class="p-controls">
-            <div class="seg" role="group" aria-label="Protocol">
-              <button data-proto="fav" aria-pressed="true" title="Favorites" aria-label="Favorites">
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="m8 1.3 2 4.3 4.7.5-3.5 3.2 1 4.6L8 11.5l-4.2 2.4 1-4.6L1.3 6.1 6 5.6Z"/></svg>
-              </button>
-              <button data-proto="TCP" aria-pressed="false">TCP</button>
-              <button data-proto="UDP" aria-pressed="false">UDP</button>
-              <button data-proto="all" aria-pressed="false">All</button>
-            </div>
-            <div class="seg" role="group" aria-label="View">
-              <button data-view="list" aria-pressed="true" title="Flat list" aria-label="Flat list">
-                <svg width="14" height="12" viewBox="0 0 14 12" fill="currentColor"><circle cx="1.5" cy="1.5" r="1.3"/><circle cx="1.5" cy="6" r="1.3"/><circle cx="1.5" cy="10.5" r="1.3"/><rect x="4.5" y=".8" width="9.5" height="1.5" rx=".7"/><rect x="4.5" y="5.2" width="9.5" height="1.5" rx=".7"/><rect x="4.5" y="9.7" width="9.5" height="1.5" rx=".7"/></svg>
-              </button>
-              <button data-view="apps" aria-pressed="false" title="Group by app" aria-label="Group by app">
-                <svg width="14" height="13" viewBox="0 0 14 13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="m7 1 6 3-6 3-6-3 6-3Z"/><path d="m1 6.8 6 3 6-3M1 9.5l6 3 6-3"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <button class="banner" id="banner" hidden>
-            <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" aria-hidden="true"><path d="M7 0 0 8h5l-1 6 8-8.5H7L8 0Z"/></svg>
-            <span class="grow" id="bannerText"></span><span class="ret">↩</span>
+          <button class="icon-btn" id="refresh" title="Refresh (⌘R)" aria-label="Refresh">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 11.9 4.1M13.5 2v3h-3"/></svg>
           </button>
-
-          <div class="p-list" id="list" aria-live="polite"></div>
-
-          <div class="p-foot">
-            <label><input type="checkbox" checked> Launch at login</label>
-            <button id="quit" title="Quit (⌘Q)">Quit</button>
-          </div>
-
-          <div class="toast" id="toast" hidden role="status"></div>
         </div>
 
-        <p class="try" id="try">Try it: type <kbd>3000</kbd> and press <kbd>Return</kbd></p>
-      </div>
-    </section>
+        <label class="p-search">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+          <input id="q" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="Port, app, process or PID" aria-label="Search ports">
+          <button class="fav-btn" id="favBtn" type="button" hidden aria-pressed="false">
+            <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="m8 1.3 2 4.3 4.7.5-3.5 3.2 1 4.6L8 11.5l-4.2 2.4 1-4.6L1.3 6.1 6 5.6Z"/></svg>
+          </button>
+        </label>
 
+        <div class="p-controls">
+          <div class="seg" role="group" aria-label="Protocol">
+            <button data-proto="fav" aria-pressed="true" title="Favorites" aria-label="Favorites">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="m8 1.3 2 4.3 4.7.5-3.5 3.2 1 4.6L8 11.5l-4.2 2.4 1-4.6L1.3 6.1 6 5.6Z"/></svg>
+            </button>
+            <button data-proto="TCP" aria-pressed="false">TCP</button>
+            <button data-proto="UDP" aria-pressed="false">UDP</button>
+            <button data-proto="all" aria-pressed="false">All</button>
+          </div>
+          <div class="seg" role="group" aria-label="View">
+            <button data-view="list" aria-pressed="true" title="Flat list" aria-label="Flat list">
+              <svg width="14" height="12" viewBox="0 0 14 12" fill="currentColor"><circle cx="1.5" cy="1.5" r="1.3"/><circle cx="1.5" cy="6" r="1.3"/><circle cx="1.5" cy="10.5" r="1.3"/><rect x="4.5" y=".8" width="9.5" height="1.5" rx=".7"/><rect x="4.5" y="5.2" width="9.5" height="1.5" rx=".7"/><rect x="4.5" y="9.7" width="9.5" height="1.5" rx=".7"/></svg>
+            </button>
+            <button data-view="apps" aria-pressed="false" title="Group by app" aria-label="Group by app">
+              <svg width="14" height="13" viewBox="0 0 14 13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="m7 1 6 3-6 3-6-3 6-3Z"/><path d="m1 6.8 6 3 6-3M1 9.5l6 3 6-3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button class="banner" id="banner" hidden>
+          <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" aria-hidden="true"><path d="M7 0 0 8h5l-1 6 8-8.5H7L8 0Z"/></svg>
+          <span class="grow" id="bannerText"></span><span class="ret">↩</span>
+        </button>
+
+        <div class="p-list" id="list" aria-live="polite"></div>
+
+        <div class="p-foot">
+          <label><input type="checkbox" checked> Launch at login</label>
+          <button id="quit" title="Quit (⌘Q)">Quit</button>
+        </div>
+
+        <div class="toast" id="toast" hidden role="status"></div>
+      </div>
+      <p class="try" id="try">Try it: type <kbd>3000</kbd> and press <kbd>Return</kbd></p>
+    </div>
+  </section>
+
+  <div class="wrap">
     <section class="band">
-      <h2>The same thing, without the incantation.</h2>
-      <p class="lede">Every developer has typed this from memory, got it slightly wrong, and typed it again. Kill9 is that command with a window around it.</p>
+      <h2>The one-liner, minus the memorizing.</h2>
       <div class="compare">
-        <figure>
-          <figcaption>Terminal</figcaption>
-          <pre class="term"><span class="c"># what's on 3000?</span>
-<span class="p">$</span> lsof -nP -iTCP:3000 -sTCP:LISTEN
-<span class="c"># copy the PID, then</span>
-<span class="p">$</span> kill -9 48213
-<span class="c"># or, if you remember it</span>
-<span class="p">$</span> kill -9 $(lsof -ti tcp:3000)</pre>
-        </figure>
-        <figure>
-          <figcaption>Kill9</figcaption>
-          <div class="keys">Click <kbd>⑨</kbd> in the menu bar, type <kbd>3000</kbd>, press <kbd>↩</kbd></div>
-        </figure>
+        <pre class="term"><span class="p">$</span> kill -9 $(lsof -ti tcp:3000)</pre>
+        <span class="vs">or</span>
+        <div class="keys" aria-label="Click the Kill9 icon, type 3000, press Return"><kbd class="k9">9</kbd><kbd>3000</kbd><kbd>↩</kbd></div>
       </div>
     </section>
 
     <section class="band" id="features">
       <h2>Small on purpose.</h2>
-      <p class="lede">One window in the menu bar. It does one job well, then gets out of the way.</p>
       <dl class="feats">
-        <div><dt>Every port at a glance</dt><dd>Listening TCP and bound UDP ports, IPv4 and IPv6 merged into one row. Refreshes every 3 seconds while open.</dd></div>
-        <div><dt>Port, then Return</dt><dd>Type a port number and press Return to stop everything using it. Search also matches app names, process names and PIDs.</dd></div>
-        <div><dt>Your ports, starred</dt><dd>The ★ filter shows only the ports you care about. It comes with common dev-server, database and debugger ports; type any port and click ☆ to add your own.</dd></div>
-        <div><dt>Gentle first, firm second</dt><dd>Kill sends SIGTERM so servers can shut down cleanly, then SIGKILL after 1.5 seconds if they don't. Force Kill sends <code>-9</code> straight away.</dd></div>
-        <div><dt>Grouped by app</dt><dd>Helper processes roll up into their parent app, so Docker or your IDE shows up once with all its ports.</dd></div>
-        <div><dt>Know what you're stopping</dt><dd>Process name, app icon, PID, user, and whether it listens on localhost only or on every interface. Right-click to open it in a browser, copy the PID or kill command, or reveal it in Finder.</dd></div>
+        <div><dt><span class="glyph" aria-hidden="true">:*</span>Every port</dt><dd>TCP and UDP, IPv4 and IPv6, refreshed every 3 seconds.</dd></div>
+        <div><dt><span class="glyph star" aria-hidden="true">★</span>Your ports first</dt><dd>Star the ports you use and filter to just those.</dd></div>
+        <div><dt><span class="glyph" aria-hidden="true">15→9</span>Gentle, then firm</dt><dd>SIGTERM first. SIGKILL 1.5 seconds later if it won't quit.</dd></div>
+        <div><dt><span class="glyph" aria-hidden="true">{ }</span>Grouped by app</dt><dd>Docker or your IDE shows up once, with all its ports.</dd></div>
       </dl>
     </section>
 
     <section class="band" id="install">
       <h2>Install in a minute.</h2>
-      <p class="lede">Kill9 isn't notarized by Apple yet, so macOS asks you to confirm the first launch. You only do this once.</p>
       <ol class="steps">
-        <li><div><b>Download Kill9.dmg</b><span>Get the <a href="https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg">latest release</a> and double-click it to open.</span></div></li>
-        <li><div><b>Drag it to Applications</b><span>Drag Kill9 onto the Applications folder in the window that opens. If you skip this, Kill9 offers to move itself when you first open it.</span></div></li>
+        <li><b>Download</b><span>Open <a href="https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg">Kill9.dmg</a>.</span></li>
+        <li><b>Drag to Applications</b><span>Then open Kill9. Its icon appears in the menu bar.</span></li>
         <li>
-          <div>
-            <b>Allow it to open</b>
-            <span>Run this once in Terminal. Or try to open the app, then click Open Anyway in System Settings → Privacy &amp; Security.</span>
-            <div class="cmd"><code id="xattr">xattr -dr com.apple.quarantine /Applications/Kill9.app</code><button class="copy" data-copy="xattr">Copy</button></div>
-          </div>
+          <b>Allow the first launch</b>
+          <span>Kill9 isn't notarized yet, so macOS asks once. Run this, or click Open Anyway in Privacy &amp; Security.</span>
+          <div class="cmd"><code id="xattr">xattr -dr com.apple.quarantine /Applications/Kill9.app</code><button class="copy" data-copy="xattr">Copy</button></div>
         </li>
-        <li><div><b>Open Kill9</b><span>The ⑨ icon appears in your menu bar. There's no Dock icon. Turn on Launch at login if you want it there every day.</span></div></li>
       </ol>
-      <p class="note">Rather build it yourself? Clone the repo and run <code>./build-app.sh</code>. You need macOS 13 or later and the Xcode Command Line Tools. Kill9 can only stop processes owned by your user; for root-owned ones it shows the <code>sudo kill -9</code> command to run instead.</p>
     </section>
 
-    <section class="final">
-      <h2>Next time a port is taken, it takes one keystroke.</h2>
-      <div class="ctas">
-        <a class="btn" href="https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10m0 0-4-4m4 4 4-4M4 16h12"/></svg>
-          Download for macOS
-        </a>
-        <span class="req"><a href="https://github.com/masb3/kill9">Star it on GitHub</a></span>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <span>Kill9 — a friendly GUI for <code>kill -9 $(lsof -ti tcp:PORT)</code></span>
-    <a href="https://github.com/masb3/kill9">github.com/masb3/kill9</a>
-  </footer>
-</div>
+    <footer>
+      <span>Kill9 is a friendly GUI for <code>kill -9</code>.</span>
+      <nav>
+        <a href="https://github.com/masb3/kill9#build-from-source">Build from source</a>
+        <a href="https://github.com/masb3/kill9">GitHub</a>
+      </nav>
+    </footer>
+  </div>
+</main>
 
 <script>
 (() => {
@@ -649,7 +639,8 @@
   }));
 
   const d = new Date();
-  $("clock").textContent = d.toLocaleDateString("en-US", { weekday: "short" }) + " " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).replace(/\s?[AP]M/, "");
+  const pad = n => String(n).padStart(2, "0");
+  $("clock").innerHTML = `<span class="cdate">${d.toLocaleDateString("en-US", { weekday: "short" })} ${pad(d.getDate())}.${d.toLocaleDateString("en-US", { month: "short" })} </span>${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
   render();
 })();
