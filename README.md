@@ -32,6 +32,17 @@ Seen that one before? Click ⑨ in the menu bar, type `3000`, press **Return**. 
 
 ## Install
 
+### With Homebrew (recommended)
+
+```bash
+brew install masb3/tap/kill9
+kill9
+```
+
+Homebrew builds Kill9 on your Mac, so it opens without a security prompt. `kill9` starts it; the ⑨ icon appears in your menu bar. Building takes about a minute and uses the Xcode Command Line Tools, which Homebrew already needs.
+
+### Or download the app
+
 1. Download [**Kill9.dmg**](https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg) and open it.
 2. Drag **Kill9** onto the **Applications** folder in the window that opens.
 3. Kill9 isn't notarized by Apple yet, so macOS blocks the first launch. Allow it once:

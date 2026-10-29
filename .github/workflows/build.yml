@@ -80,19 +80,20 @@ jobs:
             Kill9.zip
           generate_release_notes: true
 
-      - name: Update Homebrew cask
+      - name: Update Homebrew formula
         if: inputs.version != '' && env.HAS_TAP == 'true'
         env:
           TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
           VERSION: ${{ inputs.version }}
         run: |
-          SHA="$(shasum -a 256 Kill9.dmg | cut -d' ' -f1)"
+          # The formula builds from the tagged source, so hash the source tarball, not the DMG.
+          SHA="$(curl -fsSL "https://github.com/masb3/kill9/archive/refs/tags/v$VERSION.tar.gz" | shasum -a 256 | cut -d' ' -f1)"
           git clone "https://x-access-token:$TAP_TOKEN@github.com/masb3/homebrew-tap.git" tap
-          mkdir -p tap/Casks
-          sed -e "s/@VERSION@/$VERSION/" -e "s/@SHA256@/$SHA/" packaging/kill9.rb > tap/Casks/kill9.rb
+          mkdir -p tap/Formula
+          sed -e '/^# Template for/d' -e "s/@VERSION@/$VERSION/" -e "s/@SHA256@/$SHA/" packaging/kill9.rb > tap/Formula/kill9.rb
           cd tap
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Casks/kill9.rb
+          git add Formula/kill9.rb
           git commit -m "kill9 $VERSION"
           git push

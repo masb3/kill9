@@ -15,6 +15,8 @@ enum AppMover {
 
         let source = originalURL(of: bundleURL)
         guard !isInApplicationsFolder(source) else { return }
+        // Homebrew owns its copy; moving it would break `brew upgrade` and `brew uninstall`.
+        guard !source.resolvingSymlinksInPath().path.contains("/Cellar/") else { return }
 
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()

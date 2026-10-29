@@ -282,6 +282,11 @@
   .copy { appearance: none; border: 1px solid #48484A; background: transparent; color: #E8E8ED; font: 500 13px/1 var(--sans); padding: 7px 10px; border-radius: 7px; cursor: pointer; flex: none; }
   .copy:hover { background: #2c2c2e; }
 
+  .brew { max-width: 560px; margin-bottom: 48px; }
+  .brew p { margin: 0; font-size: 18px; }
+  .brew .cmd { font-size: 14px; padding: 12px 12px 12px 16px; }
+  .brew .cmd code { white-space: normal; }
+  .or-dmg { margin: 0 0 24px; color: var(--ink-2); font-size: 16px; }
   footer { border-top: 1px solid var(--line); padding: 28px 0 44px; font-size: 15px; color: var(--ink-3); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
   footer nav { display: flex; gap: 22px; }
   footer a { color: var(--ink-2); text-decoration: none; }
@@ -431,6 +436,11 @@
 
     <section class="band" id="install">
       <h2>Install in a minute.</h2>
+      <div class="brew">
+        <p>With Homebrew, it's one line and opens without a security prompt:</p>
+        <div class="cmd"><code id="brew">brew install masb3/tap/kill9 &amp;&amp; kill9</code><button class="copy" data-copy="brew">Copy</button></div>
+      </div>
+      <p class="or-dmg">Or download the app:</p>
       <ol class="steps">
         <li><b>Download</b><span>Open <a href="https://github.com/masb3/kill9/releases/latest/download/Kill9.dmg">Kill9.dmg</a>.</span></li>
         <li><b>Drag to Applications</b><span>Then open Kill9. Its icon appears in the menu bar.</span></li>

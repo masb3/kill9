@@ -5,18 +5,22 @@
 # Signing is ad-hoc unless SIGN_IDENTITY is set, e.g. "Developer ID Application: Name (TEAMID)".
 # With --dmg, notarization runs when NOTARY_KEY (path to an App Store Connect .p8),
 # NOTARY_KEY_ID and NOTARY_ISSUER are also set.
+#
+# ARCHS picks the architectures (default "arm64 x86_64"); the Homebrew formula builds only the native one.
+# SWIFT_BUILD_FLAGS is passed to swift build; the formula sets --disable-sandbox.
 set -euo pipefail
 cd "$(dirname "$0")"
 
 APP="Kill9"
 OUT="build/$APP.app"
+read -r -a FLAGS <<< "${SWIFT_BUILD_FLAGS:-}"
 
 # One build per arch, then lipo: multi-arch `swift build --arch a --arch b` needs full Xcode.
 BINS=()
-for ARCH in arm64 x86_64; do
+for ARCH in ${ARCHS:-arm64 x86_64}; do
   echo "▸ Compiling (release, $ARCH)…"
-  swift build -c release --triple "$ARCH-apple-macosx13.0"
-  BINS+=("$(swift build -c release --triple "$ARCH-apple-macosx13.0" --show-bin-path)/$APP")
+  swift build -c release --triple "$ARCH-apple-macosx13.0" ${FLAGS[@]+"${FLAGS[@]}"}
+  BINS+=("$(swift build -c release --triple "$ARCH-apple-macosx13.0" ${FLAGS[@]+"${FLAGS[@]}"} --show-bin-path)/$APP")
 done
 
 echo "▸ Assembling $OUT"
